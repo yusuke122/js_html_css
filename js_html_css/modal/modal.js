@@ -5,11 +5,28 @@
 
 const modalBtn = document.querySelector(".modal-btn");
 const modal = document.querySelector(".modal-overlay");
+const truemodal = document.querySelector(".modal-trueoverlay");
 const closeBtn = document.querySelector(".close-btn");
+
+window.onload = function () {
+  truemodal.classList.add("open-modal");
+};
+
 
 modalBtn.addEventListener("click", function () {
   modal.classList.add("open-modal");
 });
+/*
 closeBtn.addEventListener("click", function () {
   modal.classList.remove("open-modal");
 });
+*/
+function closeModal()
+{
+  modal.classList.remove("open-modal");
+}
+
+function closeTrueModal()
+{
+  truemodal.classList.remove("open-modal");
+}

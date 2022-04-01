@@ -220,6 +220,19 @@ Modal
   visibility: hidden;
   z-index: -10;
 }
+.modal-trueoverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(73, 166, 233, 0.5);
+  display: grid;
+  place-items: center;
+  transition: var(--transition);
+  visibility: hidden;
+  z-index: -10;
+}
 /* OPEN/CLOSE MODAL */
 .open-modal {
   visibility: visible;
