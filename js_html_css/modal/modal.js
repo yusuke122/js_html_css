@@ -9,10 +9,10 @@ const truemodal = document.querySelector(".modal-trueoverlay");
 const closeBtn = document.querySelector(".close-btn");
 
 window.onload = function () {
-  truemodal.classList.add("open-modal");
+  //truemodal.classList.add("open-modal");
 };
 
-
+/*
 modalBtn.addEventListener("click", function () {
   modal.classList.add("open-modal");
 });
@@ -29,4 +29,9 @@ function closeModal()
 function closeTrueModal()
 {
   truemodal.classList.remove("open-modal");
+}
+
+function opentrue()
+{
+  truemodal.classList.add("open-modal");
 }
