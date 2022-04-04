@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>サンプル</title>
+    <link rel="stylesheet" href="container.css">
+</head>
+<script>
+    window.onload = function() {
+        //document.getElementById("at").focus();
+        setTimeout(Focus, 3000);
+        //document.querySelector("#myTextField").focus();
+        //document.querySelector("#focus-btn").click();
+    };
+    focusMethod = function getFocus() {
+        document.querySelector("#myTextField").focus();
+    }
+
+    function gf() {
+        document.querySelector("#myTextField").focus();
+    }
+
+    function Focus() {
+        document.querySelector("#focus-btn").focus();
+        setTimeout(gf, 3000);
+        // document.querySelector("#focus-btn").click();
+        //document.querySelector("#myTextField").focus();
+    }
+
+    function airfunc() {
+        Focus();
+
+    }
+</script>
+
+<body>
+    <header>
+        <p>ヘッター部</p>
+    </header>
+    <div>コンテンツ</div>
+    <form>
+        <input type="text" id="at" value="" autofocus>
+
+    </form>
+    <input type="text" id="myTextField" value="テキストフィールド">
+    <p></p>
+    <button type="button" id="focus-btn" onclick="Focus()">クリックしてテキストフィールドにフォーカスしてください！</button>
+    <footer>フッター部</footer>
+</body>
+
+</html>

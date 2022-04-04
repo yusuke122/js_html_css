@@ -1,0 +1,47 @@
+<html>
+
+<head>
+
+    <script type="text/javascript">
+        // 設定開始（メッセージの内容と動きを設定してください）
+
+        function myCheck() {
+            var flag = false; // 選択されているか否かを判定するフラグ
+
+            //　ラジオボタンの数だけ判定を繰り返す（ボタンを表すインプットタグがあるので１引く）
+            for (var i = 0; i < document.form1.fruits.length; i++) {
+
+                // i番目のラジオボタンがチェックされているかを判定
+                if (document.form1.fruits[i].checked) {
+                    flag = true;
+                    alert(document.form1.fruits[i].value + "が選択されました。");
+                }
+            }
+
+            // 何も選択されていない場合の処理
+            if (!flag) {
+                alert("項目が選択されていません。");
+            }
+        }
+
+        function soundCheck() {
+            alert(document.soundform.sound[0].value);
+        }
+    </script>
+
+</head>
+
+<form name="form1">
+    <input type="radio" name="fruits" value="りんご">りんご</br>
+    <input type="radio" name="fruits" value="バナナ">バナナ</br>
+    <input type="radio" name="fruits" value="オレンジ">オレンジ</br>
+    <button value="check" onclick="myCheck()">CHECK</button>
+</form>
+<form name="soundform">
+    <label>SOUND</br>
+    <label><input type="radio" name="sound" value="soundon"id="SoundEditOn"onclick="soundCheck()">ON</label>
+    <label><input type="radio" name="sound" value="soundoff"id="SoundEditOff"onclick="soundCheck()">OFF</label></label>
+</form>
+
+
+</html>
