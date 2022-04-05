@@ -1,36 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>sample</title>
-</head>
-<body>
-  <button onclick="stop()">停止</button>
-  <button onclick="play()" id="play">再生</button>
-  <script language="javascript" type="text/javascript">
-  var music = new Audio();
-  function init() {
-    music.preload = "auto";
-    music.src = "./mymusic.mp3";
-    music.load();
+const music = new Audio("かえるのピアノ.mp3");
 
-    music.addEventListener("ended", function () {
-      music.currentTime = 0;
-      music.play();
-    }, false);
-  }
+//sound
+const soundVolumeElem = document.querySelector("#soundEditVolume"); //input elem
+const currentVolumeElem = document.querySelector("#currentVolume"); //span elem
 
-  function play() {
-    music.loop = true;
+
+window.onload = () => {
+        soundVolumeElem.addEventListener('input', soundRangeOnChange); // soundスライダー変化時にイベントを発火
+        setCurrentValue(soundVolumeElem.value); // ページ読み込み時に値をセット
+    }
+    //sound
+    // 現在の値をspanに埋め込む関数
+const setCurrentValue = (val) => {
+    currentVolumeElem.innerText = val;
+    music.volume = val / 100; //default=50/100 =>0.5
+}
+
+// inputイベント時に値をセットする関数
+const soundRangeOnChange = (e) => {
+    setCurrentValue(e.target.value);
+}
+
+function soundCheckOn() {
     music.play();
-  }
+}
 
-  function stop() {
+function soundCheckOff() {
     music.pause();
-    music.currentTime = 0;
-  }
-
-  init();
-  </script>
-</body>
-</html>
+}
