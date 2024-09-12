@@ -9,3 +9,5 @@ function chg(){
 }
 chg();
 chg();
+
+https://openlayers.org/en/latest/examples/style-renderer.html
