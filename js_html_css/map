@@ -1,1 +1,11 @@
 https://maps.gsi.go.jp/development/ichiran.html#blank
+
+function chg(){
+  var layers=map.getLayers();
+  var layer1 = layers.pop();
+  var layer0 = layers.pop();
+  layers.setAt(0, layer1);
+  layers.setAt(1, layer0);
+}
+chg();
+chg();
