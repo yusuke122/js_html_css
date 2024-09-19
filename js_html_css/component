@@ -14,7 +14,12 @@
             </template>
           </ul>
           <!-----③これよりProps------>
-          <props :number="number" :objects="objects"> </props>
+ <props
+   :number="number"
+   :objects="objects"
+   @my-click="emitEvent"
+   >
+</props>
         </div>
       </v-layout>
     </v-container>
@@ -43,3 +48,42 @@ export default {
   }
 };
 </script>
+<script>
+data() {
+    return {
+      number: 1,
+      objects: {
+        id: 1,
+        number: 10,
+        name: '山田太郎'
+      },
+      // 受け取ったデータを格納する初期値
+      myNumber: 0
+    };
+  },
+　// 受け取ったデータを引数に指定し、親コンポーネントのmyNumberに格納します
+  methods: {
+    emitEvent(myNumber) {
+      this.myNumber = myNumber;
+    }
+  }
+</script>
+
+<!---子コンポーネントに追加----->
+<template>
+  <v-btn @click="incrementByEmit" class="mt-3" small>+10</v-btn>
+</template>
+<script>
+data() {
+    return {
+      myNumber: 0
+    };
+  },
+  methods: {
+    incrementByEmit() {
+      this.$emit('my-click', (this.myNumber += 10));
+    }
+  }
+</script>
+
+
