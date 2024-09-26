@@ -83,4 +83,14 @@ export default {
 }
 </script>
 
+/////////////////////////
+
+watch(
+  () => obj.count,
+  (count) => {
+    console.log(`count is: ${count}`)
+  }
+)
+
+
 
