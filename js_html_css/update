@@ -93,4 +93,28 @@ watch(
 )
 
 
+/////////////////////////vue3公式
+
+const x = ref(0)
+const y = ref(0)
+
+// 単一の ref
+watch(x, (newX) => {
+  console.log(`x is ${newX}`)
+})
+
+// getter
+watch(
+  () => x.value + y.value,
+  (sum) => {
+    console.log(`sum of x + y is: ${sum}`)
+  }
+)
+
+// 複数のソースの配列
+watch([x, () => y.value], ([newX, newY]) => {
+  console.log(`x is ${newX} and y is ${newY}`)
+})
+
+
 
