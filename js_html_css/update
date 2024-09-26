@@ -1,0 +1,86 @@
+<template>
+  <div>
+    <p>{{ count }}</p>
+    <button @click="increment">increment</button>
+  </div>
+</template>
+
+<script>
+export default {
+  setup() {
+    const count = ref(0)
+    const increment = () => {
+      count.value++
+    }
+    return {
+      count,
+      increment
+    }
+  }
+}
+</script>
+
+/////////////////////////
+
+<template>
+  <div>
+    <child v-if="resetFlag" ref="component" />
+    <button @reset="reset">reset</button>
+  </div>
+</template>
+
+<script>
+import Child from './Child.vue'
+
+export default {
+  components: {
+    Child
+  },
+  setup() {
+    const component = ref(null)
+    const resetFlag = ref(false)
+    const reset = () => {
+      resetFlag.value = true
+      component.value.$nextTick(() => {
+        resetFlag.value = false
+      })
+    }
+    return {
+      component,
+      resetFlag,
+      reset
+    }
+  }
+}
+</script>
+
+/////////////////////////
+
+<template>
+  <div>
+    <child :key="resetKey" ref="component" />
+    <button @reset="reset">reset</button>
+  </div>
+</template>
+
+<script>
+import Child from './Child.vue'
+
+export default {
+  components: {
+    Child
+  },
+  setup() {
+    const resetKey = ref(0)
+    const reset = () => {
+      resetKey.value++
+    }
+    return {
+      resetKey,
+      reset
+    }
+  }
+}
+</script>
+
+
