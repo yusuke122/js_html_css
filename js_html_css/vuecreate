@@ -28,4 +28,21 @@ Vue.createApp({
   },
 }).mount('#app');
 
-//
+//https://ja.vuejs.org/guide/typescript/composition-api.html#typing-component-props
+<script setup lang="ts">
+const props = defineProps({
+  foo: { type: String, required: true },
+  bar: Number
+})
+
+props.foo // string
+props.bar // number | undefined
+</script>
+
+//こう書くこともできる　型ベースの宣言
+<script setup lang="ts">
+const props = defineProps<{
+  foo: string
+  bar?: number
+}>()
+</script>
