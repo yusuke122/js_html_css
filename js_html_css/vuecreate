@@ -1,0 +1,28 @@
+PageA = {
+  template: `
+  <div><h1>ページAです</h1></div>
+  `,
+};
+
+PageB = {
+  template: `
+  <div><h1>ページBです</h1></div>
+  `,
+};
+
+Vue.createApp({
+  data() {
+    return {
+      page: 'page-a'
+    };
+  },
+  components: {
+    'page-a': PageA,
+    'page-b': PageB,
+  },
+  methods: {
+    pageClick(page) {
+      this.page = page;
+    },
+  },
+}).mount('#app');
