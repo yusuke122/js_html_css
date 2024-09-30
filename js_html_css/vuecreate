@@ -1,4 +1,18 @@
 //https://qiita.com/SeiuchiAzarashi/items/3fe73b4ea91652b1a40d
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="app">
+      <a v-on:click="pageClick('page-a')" style="padding-right: 20px;">ページA</a>
+      <a v-on:click="pageClick('page-b')">ページB</a>
+      <component v-bind:is="page" />
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.29/dist/vue.global.js"></script>
+  </body>
+</html>
+
 PageA = {
   template: `
   <div><h1>ページAです</h1></div>
@@ -46,3 +60,5 @@ const props = defineProps<{
   bar?: number
 }>()
 </script>
+
+
