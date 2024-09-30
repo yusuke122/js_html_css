@@ -1,3 +1,4 @@
+//https://qiita.com/SeiuchiAzarashi/items/3fe73b4ea91652b1a40d
 PageA = {
   template: `
   <div><h1>ページAです</h1></div>
