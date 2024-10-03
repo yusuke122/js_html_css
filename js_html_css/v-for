@@ -1,0 +1,6 @@
+<div v-for='category in categories'>
+  <div v-for='blog in category.blogs'>
+    <div>{{blog.title}}</div>
+    <div>{{blog.text}}</div>
+  </div>
+</div>
