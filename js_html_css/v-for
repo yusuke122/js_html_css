@@ -4,3 +4,47 @@
     <div>{{blog.text}}</div>
   </div>
 </div>
+
+
+////
+new Vue({
+  el: '#demo',
+  data: {
+    categories: [
+      { 
+        name: 'カテゴリ1',
+        blogs: [
+          {
+            title: "タイトル1",
+            img: 'https://goo.gl/hvjbc4'
+          },
+          {
+            title: "タイトル2",
+            img: 'https://goo.gl/hvjbc4'
+          },
+          {
+            title: "タイトル3",
+            img: 'https://goo.gl/hvjbc4'
+          }
+        ]
+      },
+      { 
+        name: 'カテゴリ2',
+        blogs: []
+      },
+      { 
+        name: 'カテゴリ3',
+        blogs: [
+          {
+            title: "タイトル1",
+            img: 'https://goo.gl/hvjbc4'
+          },
+          {
+            title: "タイトル2",
+            img: 'https://goo.gl/hvjbc4'
+          }
+        ]
+      }
+    ]
+  }
+})
