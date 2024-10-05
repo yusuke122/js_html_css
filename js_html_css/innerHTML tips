@@ -1,0 +1,11 @@
+<template id="myTemplate">
+  <div>
+    <h1>Hello, World!</h1>
+    <p>This is a sample paragraph.</p>
+  </div>
+</template>
+
+<script>
+  const template = document.getElementById('myTemplate').content;
+  document.getElementById('myElement').appendChild(template.cloneNode(true));
+</script>
