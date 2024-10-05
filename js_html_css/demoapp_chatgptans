@@ -1,0 +1,162 @@
+実装手順
+1. フロントエンド (Vue.js)
+API通信の準備
+//この例はバックエンドについてホスティングする場合。
+
+AxiosなどのHTTPクライアントを使用してFlaskバックエンドと通信します。
+bash
+コードをコピーする
+npm install axios
+javascript
+コードをコピーする
+// api.js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://your-flask-backend-url/api',
+});
+
+export const fetchData = () => api.get('/data');
+export const sendData = (data) => api.post('/data', data);
+データの取得と表示
+
+fetchDataメソッドを呼び出してデータを取得し、UIに表示します。
+vue
+コードをコピーする
+<template>
+  <div>
+    <ul>
+      <li v-for="item in data" :key="item.id">{{ item.name }}</li>
+    </ul>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { fetchData } from './api';
+
+const data = ref([]);
+
+onMounted(async () => {
+  const response = await fetchData();
+  data.value = response.data;
+});
+</script>
+データの更新
+
+データが更新された場合、FlaskからWebSocketやServer-Sent Eventsを使ってフロントエンドに通知し、UIを自動的に更新することができます。
+2. バックエンド (Flask)
+Flaskアプリのセットアップ
+
+Flaskを使ってAPIエンドポイントを設定します。
+bash
+コードをコピーする
+pip install Flask Flask-Cors psycopg2
+python
+コードをコピーする
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import psycopg2
+
+app = Flask(__name__)
+CORS(app)  # CORSの設定
+
+# PostgreSQLの接続設定
+def get_db_connection():
+    conn = psycopg2.connect(
+        host='your-db-host',
+        database='your-database',
+        user='your-username',
+        password='your-password'
+    )
+    return conn
+
+@app.route('/api/data', methods=['GET', 'POST'])
+def data():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        new_data = request.json
+        cursor.execute("INSERT INTO your_table (name) VALUES (%s)", (new_data['name'],))
+        conn.commit()
+
+    cursor.execute("SELECT * FROM your_table;")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+外部システムからのデータ受信
+
+Flaskにデータを受信するためのエンドポイントを作成し、Pythonのマルチプロセスを使って監視します。
+python
+コードをコピーする
+import multiprocessing
+
+def external_system_monitor():
+    while True:
+        # 外部システムからデータを受信するロジック
+        data = receive_data()  # 受信処理
+        insert_data_to_db(data)  # データベースに挿入
+
+if __name__ == '__main__':
+    monitor_process = multiprocessing.Process(target=external_system_monitor)
+    monitor_process.start()
+    app.run(debug=True)
+データベースへのデータ挿入
+
+受信したデータをPostgreSQLに挿入する関数を作成します。
+python
+コードをコピーする
+def insert_data_to_db(data):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO your_table (name) VALUES (%s)", (data['name'],))
+    conn.commit()
+    cursor.close()
+    conn.close()
+3. データベース (PostgreSQL)
+データベースとテーブルの作成
+
+PostgreSQLで必要なデータベースとテーブルを作成します。
+sql
+コードをコピーする
+CREATE DATABASE your_database;
+
+\c your_database;
+
+CREATE TABLE your_table (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100)
+);
+4. Webサーバー (Apache)
+Apacheの設定
+
+FlaskアプリをWSGIでApacheにデプロイします。mod_wsgiを使ってFlaskアプリをApacheに接続します。
+bash
+コードをコピーする
+sudo apt-get install libapache2-mod-wsgi-py3
+Apacheの設定ファイルに以下を追加します。
+apache
+コードをコピーする
+WSGIDaemonProcess yourapp python-home=/path/to/venv python-path=/path/to/yourapp
+WSGIScriptAlias / /path/to/yourapp.wsgi
+
+<Directory /path/to/yourapp>
+    Require all granted
+</Directory>
+FlaskアプリのWSGIファイル作成
+
+yourapp.wsgiファイルを作成します。
+python
+コードをコピーする
+import sys
+import os
+
+sys.path.insert(0, '/path/to/yourapp')
+
+from app import app as application  # Flaskアプリのインポート
