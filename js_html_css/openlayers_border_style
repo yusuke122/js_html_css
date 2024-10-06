@@ -1,0 +1,16 @@
+ var retStyle = [
+    new ol.style.Style({
+      stroke: new ol.style.Stroke({ 
+        color: outerColor,
+        width: 7,
+      }),
+      zIndex: 0,
+    }),
+    new ol.style.Style({
+      stroke: new ol.style.Stroke({ 
+        color: color,
+        width: 5,
+      }),
+      zIndex: 1,
+    })
+  ];
