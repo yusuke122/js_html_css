@@ -1,0 +1,1073 @@
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css" integrity="sha256-rQq4Fxpq3LlPQ8yP11i6Z2lAo82b6ACDgd35CKyNEBw=" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js" integrity="sha256-77IKwU93jwIX7zmgEBfYGHcmeO0Fx2MoWB/ooh9QkBA=" crossorigin="anonymous"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>-->
+    <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>   -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js" integrity="sha256-FPJJt8nA+xL4RU6/gsriA8p8xAeLGatoyTjldvQKGdE=" crossorigin="anonymous"></script>
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+  
+  
+    <div id="map" style="height:300px"></div>
+    <div id="popup"></div>
+    <div style="margin:5px;" class="row">
+      <div class="col-sm-8">
+        <div class="col-sm-2">Stroke Width:</div>
+        <div class="col-sm-2">
+          <select id="strokeWidth" class="feature-style form-control">
+            <option value="1">1</option>&gt;
+            <option value="2" selected="selected">2</option>&gt;
+            <option value="4">4</option>&gt;
+            <option value="8">8</option>&gt;
+          </select>
+        </div>
+        <div class="col-sm-2">Stroke Color:</div>
+        <div class="col-sm-2">
+          <select id="strokeColor" class="feature-style form-control">
+            <option value="#000000">black</option>&gt;
+            <option value="#ff0000" selected="selected">red</option>&gt;
+            <option value="#f9c309">yellow</option>&gt;
+            <option value="#0000ff">blue</option>&gt;
+            <option value="#00ff00">green</option>&gt;
+          </select>
+        </div>    
+    </div>
+    <script>
+      // 図形を採番するための変数
+      var featureId = 0;
+
+      // 描画された図形に適用されるスタイル
+      var styleFunction = function(feature) {
+        var geometry = feature.getGeometry();
+        var shape = feature.get('shape');
+        var styles = [];
+        if (geometry.getType() == 'Point') {
+          // 点の場合、マーカー配置
+          styles.push(new ol.style.Style({
+            image: new ol.style.Icon ({
+                anchor: [0.5, 20],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                opacity: 0.95,
+                src: 'https://sun-san-tech.com/wp-content/uploads/2024/02/marker_blue.png'
+            })
+          }));
+        } else if (shape == 'LineString'){
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: (feature.get('strokeColor') ? feature.get('strokeColor') : '#ff0000'),
+              width: (feature.get('strokeWidth') ? feature.get('strokeWidth') : 2)
+            })
+          }));
+        } else if (shape == 'Text') {
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: (feature.get('strokeColor') ? feature.get('strokeColor') : 'rgba(0,0,0,1)'),
+              width: (feature.get('strokeWidth') ? feature.get('strokeWidth') : 2)
+            }),
+            text: new ol.style.Text({
+              font: 'bold 11px "Open Sans", "Arial Unicode MS", "sans-serif"',
+              fill: new ol.style.Fill({
+                color: 'black'
+              }),
+              overflow: true,
+              offsetX: getTextOffset(feature)[0],
+              offsetY: getTextOffset(feature)[1],
+              textAlign: 'left',
+              text: feature.get('text')
+            })
+            
+          }));
+        } else if (shape == 'Arrow') {
+          // 矢印
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: (feature.get('strokeColor') ? feature.get('strokeColor') : '#ffcc33'),
+              width: (feature.get('strokeWidth') ? feature.get('strokeWidth') : 2)
+            })
+          }));
+          geometry.forEachSegment(function(start, end) {
+            var dx = end[0] - start[0];
+            var dy = end[1] - start[1];
+            var rotation = Math.atan2(dy, dx);
+            // arrows
+            styles.push(new ol.style.Style({
+              geometry: new ol.geom.Point(end),
+              image: new ol.style.Icon({
+                src: 'https://openlayers.org/en/latest/examples/data/arrow.png',
+                anchor: [0.75, 0.5],
+                rotateWithView: true,
+                rotation: -rotation
+              })
+            }));
+          });
+        } else if (shape == 'Image') {
+          // 画像
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: 'rgba(0,0,0,0)',
+              width: 1
+            }),
+            fill: new ol.style.Fill({
+              color: 'rgba(0,0,0,0)',
+            })
+          }));
+        }else {
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: (feature.get('strokeColor') ? feature.get('strokeColor') : '#ff0000'),
+              width: feature.get('strokeWidth')
+            }),
+            fill: new ol.style.Fill({
+              color: 'rgba(255,0,0,0.3)',
+            })
+          }));
+        }
+
+        return styles;
+      };
+
+      function getTextOffset(feature) {
+        var geometry = feature.getGeometry();
+        var extent = ol.extent.boundingExtent(geometry.getCoordinates()[0]); 
+        var center = [(extent[2] - extent[0]) / 2 + extent[0], (extent[3] - extent[1]) / 2 + extent[1]];
+        var centerPixel = map.getPixelFromCoordinate(center);
+        var leftTopPixel = map.getPixelFromCoordinate([extent[0], extent[1]]);
+        return [leftTopPixel[0] - centerPixel[0], centerPixel[1] - leftTopPixel[1]];
+      }
+      
+      var selectStyleFunction = function(feature) {
+        if (feature.get('coordinates')){
+          return null;
+        }
+        var styles = [];
+        var shape = feature.get('shape');
+        if (shape == 'Text') {
+          // テキスト選択時
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: 'rgba(0,153,255,1)',
+              width: 3
+            }),
+            fill: new ol.style.Fill({
+              color: 'rgba(255,255,255,0.3)',
+            }),
+            text: new ol.style.Text({
+              font: 'bold 11px "Open Sans", "Arial Unicode MS", "sans-serif"',
+              fill: new ol.style.Fill({
+                color: 'black'
+              }),
+              overflow: true,
+              offsetX: getTextOffset(feature)[0],
+              offsetY: getTextOffset(feature)[1],
+              textAlign: 'left',
+              text: feature.get('text')
+            })
+          }));
+        } else if (shape == 'Point') {
+          // マーカー選択時
+          styles.push(new ol.style.Style({
+            image: new ol.style.Icon ({
+                anchor: [0.5, 20],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                opacity: 0.95,
+                src: 'https://sun-san-tech.com/wp-content/uploads/2024/02/marker_red.png'
+            })
+          }));
+        } else {
+          styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: 'rgba(0,153,255,1)',
+              width: 3
+            }),
+            fill: new ol.style.Fill({
+              color: 'rgba(255,255,255,0.3)',
+            })
+          }));
+        }
+        return styles;
+      }
+      
+      // 図形を描画するレイヤーを定義する
+      var vectorSource = new ol.source.Vector();
+      var vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style: styleFunction
+      });
+      vectorLayer.set('name', 'vectorLayer');
+      
+      // 描画用ボタンの配置
+      // マーカーボタン
+      var MarkerControl = (function (Control) {
+        function MarkerControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '※';
+          button.name = 'Point';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '100px';
+          element.style.left = '5px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawMarker.bind(this), false);
+        }
+
+        if ( Control ) MarkerControl.__proto__ = Control;
+        MarkerControl.prototype = Object.create( Control && Control.prototype );
+        MarkerControl.prototype.constructor = MarkerControl;
+
+        MarkerControl.prototype.drawMarker = function drawMarker () {
+          addInteractions('Point');
+        };
+
+        return MarkerControl;
+      }(ol.control.Control));
+      
+      // Linstringボタン
+      var LineStringControl = (function (Control) {
+        function LineStringControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '＜';
+          button.name = 'LineString';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '140px';
+          element.style.left = '5px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawLineString.bind(this), false);
+        }
+
+        if ( Control ) LineStringControl.__proto__ = Control;
+        LineStringControl.prototype = Object.create( Control && Control.prototype );
+        LineStringControl.prototype.constructor = LineStringControl;
+
+        LineStringControl.prototype.drawLineString = function drawLineString () {
+          addInteractions('LineString');
+        };
+
+        return LineStringControl;
+      }(ol.control.Control));
+      
+      // 円ボタン
+      var CircleControl = (function (Control) {
+        function CircleControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = 'О';
+          button.name = 'Circle';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '180px';
+          element.style.left = '5px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawCircle.bind(this), false);
+        }
+
+        if ( Control ) CircleControl.__proto__ = Control;
+        CircleControl.prototype = Object.create( Control && Control.prototype );
+        CircleControl.prototype.constructor = CircleControl;
+
+        CircleControl.prototype.drawCircle = function drawCircle () {
+          addInteractions('Circle');
+        };
+
+        return CircleControl;
+      }(ol.control.Control));
+      
+      // 多角形ボタン
+      var PolygonControl = (function (Control) {
+        function PolygonControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '△';
+          button.name = 'Polygon';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '220px';
+          element.style.left = '5px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawPolygon.bind(this), false);
+        }
+
+        if ( Control ) PolygonControl.__proto__ = Control;
+        PolygonControl.prototype = Object.create( Control && Control.prototype );
+        PolygonControl.prototype.constructor = PolygonControl;
+
+        PolygonControl.prototype.drawPolygon = function drawPolygon () {
+          addInteractions('Polygon');
+        };
+
+        return PolygonControl;
+      }(ol.control.Control));
+      
+      // テキストボタン
+      var TextControl = (function (Control) {
+        function TextControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = 'Ｔ';
+          button.name = 'Text';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '100px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawText.bind(this), false);
+        }
+
+        if ( Control ) TextControl.__proto__ = Control;
+        TextControl.prototype = Object.create( Control && Control.prototype );
+        TextControl.prototype.constructor = TextControl;
+
+        TextControl.prototype.drawText = function drawText () {
+          addInteractions('Text');
+        };
+
+        return TextControl;
+      }(ol.control.Control));
+      
+      // 矩形ボタン
+      var RectangleControl = (function (Control) {
+        function RectangleControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = 'ロ';
+          button.name = 'Rectangle';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '140px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawRectangle.bind(this), false);
+        }
+
+        if ( Control ) RectangleControl.__proto__ = Control;
+        RectangleControl.prototype = Object.create( Control && Control.prototype );
+        RectangleControl.prototype.constructor = RectangleControl;
+
+        RectangleControl.prototype.drawRectangle = function drawRectangle () {
+          addInteractions('Rectangle');
+        };
+
+        return RectangleControl;
+      }(ol.control.Control));
+      
+      // 矢印ボタン
+      var ArrowControl = (function (Control) {
+        function ArrowControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '→';
+          button.name = 'Arrow';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '180px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawArrow.bind(this), false);
+        }
+
+        if ( Control ) ArrowControl.__proto__ = Control;
+        ArrowControl.prototype = Object.create( Control && Control.prototype );
+        ArrowControl.prototype.constructor = ArrowControl;
+
+        ArrowControl.prototype.drawArrow = function drawArrow () {
+          addInteractions('Arrow');
+        };
+
+        return ArrowControl;
+      }(ol.control.Control));
+
+      // 画像ボタン
+      var ImageControl = (function (Control) {
+        function ImageControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '画';
+          button.name = 'Image';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '220px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.drawImage.bind(this), false);
+        }
+
+        if ( Control ) ImageControl.__proto__ = Control;
+        ImageControl.prototype = Object.create( Control && Control.prototype );
+        ImageControl.prototype.constructor = ImageControl;
+
+        ImageControl.prototype.drawImage = function drawImage () {
+          addInteractions('Image');
+        };
+
+        return ImageControl;
+      }(ol.control.Control));
+
+      var select;
+      var selectedFeatures;
+      // 選択ボタン
+      var SelectControl = (function (Control) {
+        function SelectControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '選';
+          button.name = 'Select';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '60px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.doSelect.bind(this), false);
+        }
+
+        if ( Control ) SelectControl.__proto__ = Control;
+        SelectControl.prototype = Object.create( Control && Control.prototype );
+        SelectControl.prototype.constructor = SelectControl;
+
+        SelectControl.prototype.doSelect = function doSelect () {
+          // 選択モードと描画モードの切り替え
+          if (!select) {
+            changeMode();
+          }
+        };
+
+        return SelectControl;
+      }(ol.control.Control));
+
+      // 保存ボタン
+      var SaveControl = (function (Control) {
+        function SaveControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '保';
+          button.name = 'Save';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '260px';
+          element.style.left = '5px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.doSave.bind(this), false);
+        }
+
+        if ( Control ) SaveControl.__proto__ = Control;
+        SaveControl.prototype = Object.create( Control && Control.prototype );
+        SaveControl.prototype.constructor = SaveControl;
+
+        SaveControl.prototype.doSave = function doSave () {
+          // 保存
+          var features = vectorSource.getFeatures();
+          features.forEach(function(feature){
+            if (feature.get('shape') == 'Circle') {
+              // 円は座標情報が保存されないため、プロパティに座標を保持する
+              var radius = feature.getGeometry().getRadius();
+              var center = feature.getGeometry().getCenter();
+              feature.set('radius', radius);
+              feature.set('center', center);
+            }
+          });
+          var json = new ol.format.GeoJSON().writeFeatures(features);
+          var blob = new Blob([json], {type : 'application/json'});
+          saveAs(blob, 'sun.json');
+        };
+
+        return SaveControl;
+      }(ol.control.Control));
+
+      // 読込ボタン
+      var ReadControl = (function (Control) {
+        function ReadControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('input');
+          button.type = 'file'
+          button.innerHTML = '読';
+          button.name = 'Read';
+          //button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '260px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('change', this.doRead.bind(this), false);
+        }
+
+        if ( Control ) ReadControl.__proto__ = Control;
+        ReadControl.prototype = Object.create( Control && Control.prototype );
+        ReadControl.prototype.constructor = ReadControl;
+
+        ReadControl.prototype.doRead = function doRead (evt) {
+          // 読込
+          var reader = new FileReader();
+          var file = evt.target.files[0];
+          reader.addEventListener('load', function(json){
+            // jsonを読み込んで地図上に配置する
+            var features = new ol.format.GeoJSON().readFeatures(reader.result);
+            features.forEach(function(feature){
+              if (feature.get('shape') == 'Circle'){
+                // 円は特別扱い
+                var circle = new ol.geom.Circle(feature.get('center'), feature.get('radius'));
+                var newFeature = new ol.Feature(circle);
+                newFeature.setId(++featureId);
+                newFeature.set('shape', 'Circle')
+                vectorSource.addFeature(newFeature);
+                return;
+              } else if (feature.get('shape') == 'Image') {
+                // 画像のリフレッシュ
+                refreshImage(feature);
+              }
+              feature.setId(++featureId);
+              vectorSource.addFeature(feature);
+            });
+          });
+          reader.readAsText(file);
+        };
+
+        return ReadControl;
+      }(ol.control.Control));
+
+      // 消去ボタン
+      var DeleteControl = (function (Control) {
+        function DeleteControl(opt_options) {
+          var options = opt_options || {};
+
+          var button = document.createElement('button');
+          button.innerHTML = '消';
+          button.name = 'Delete';
+          button.classList.add('map-button');
+
+          var element = document.createElement('div');
+          element.className = 'ol-unselectable ol-control';
+          element.style.top = '20px';
+          element.style.left = '45px';
+          element.appendChild(button);
+
+          Control.call(this, {
+            element: element,
+            target: options.target
+          });
+
+          button.addEventListener('click', this.doDelete.bind(this), false);
+        }
+
+        if ( Control ) DeleteControl.__proto__ = Control;
+        DeleteControl.prototype = Object.create( Control && Control.prototype );
+        DeleteControl.prototype.constructor = DeleteControl;
+
+        DeleteControl.prototype.doDelete = function doDelete () {
+          // 消去
+          selectedFeatures.forEach(function(feature){
+            if (feature.get('shape') == 'Image') {
+              map.removeLayer(map.getLayers().getArray().filter(function(g){
+                return g.get('featureId') == feature.getId();
+              })[0]);
+            }
+            vectorSource.removeFeature(feature);
+          });
+          selectedFeatures.clear();
+        };
+
+        return DeleteControl;
+      }(ol.control.Control));
+
+      // 地図の初期化
+      var map = new ol.Map({
+        controls: ol.control.defaults().extend([
+          // マーカーボタン
+          new MarkerControl(),
+          // LineStringボタン
+          new LineStringControl(),
+          // 円ボタン
+          new CircleControl(),
+          // 多角形ボタン
+          new PolygonControl(),
+          // テキストボタン
+          new TextControl(),
+          // 矩形ボタン
+          new RectangleControl(),
+          // 矢印ボタン
+          new ArrowControl(),
+          // 画像ボタン
+          new ImageControl(),
+          // 選択ボタン
+          new SelectControl(),
+          // 保存ボタン
+          new SaveControl(),
+          // 読込ボタン
+          new ReadControl(),
+          // 消去ボタン
+          new DeleteControl(),
+        ]),
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            preload: 4,
+            source: new ol.source.OSM()
+          }), vectorLayer
+        ],
+        loadTilesWhileAnimating: true,
+        view: new ol.View({
+            center: ol.proj.fromLonLat([134.227352, 35.539909]),
+            zoom: 13
+        })
+      });
+
+      // 図形描画処理
+      var draw, snap;
+      function addInteractions(type) {
+        // 描画モードの切り替え
+        if (draw) {
+          map.removeInteraction(draw);
+          draw = null;
+        }
+        if (select) {
+          changeMode();
+        }
+        var shape = type;
+        var geometryFunction;
+        if (type == 'Text' || type == 'Rectangle' || type == 'Image') {
+          type = 'Circle';
+          geometryFunction = ol.interaction.Draw.createBox();
+        } else if (type == 'Arrow') {
+          type = 'LineString';
+        }
+        
+        draw = new ol.interaction.Draw({
+          source: vectorSource,
+          type: type,
+          geometryFunction: geometryFunction,
+          geometryName: shape
+        });
+        
+        // 図形描画後の処理
+        draw.on('drawend', function(e){
+          var shape = e.feature.getGeometryName();
+          e.feature.set('shape', shape);
+          // IDを設定する
+          e.feature.setId(++featureId);
+
+          if (shape == 'Text') {
+            // テキストの場合
+            inputText(e.feature);
+          } else if (shape == 'Image') {
+            // 画像の場合
+            // 描画した矩形を取得
+            var extent = ol.extent.boundingExtent(e.feature.getGeometry().getCoordinates()[0]);
+
+            // 矩形内に画像を配置する
+            var imageLayer = new ol.layer.Image({
+              source: new ol.source.ImageStatic({
+                url: 'https://sun-san-tech.com/wp-content/uploads/2019/12/wave.jpg',
+                projection: new ol.proj.Projection({
+                  code: 'xkcd-image',
+                  units: 'pixels',
+                  extent: extent
+                }),
+                imageExtent: extent
+              })
+            });
+            // 画像レイヤーに対して図形と同じIDを設定する
+            imageLayer.set('featureId', featureId);
+            // 地図に描画する
+            map.addLayer(imageLayer);
+          }
+          if (e.feature.getGeometry().getType() != 'Point') {
+            // ポイント以外の場合、線幅を設定する
+            e.feature.set('strokeWidth', $("#strokeWidth").val());
+            e.feature.set('strokeColor', $("#strokeColor").val());
+          }
+        });
+        map.addInteraction(draw);
+        
+        // マウスカーソルが図形の座標に近づいたときにカーソルを合わせる
+        if (!snap) {
+          snap = new ol.interaction.Snap({source: vectorSource});
+          map.addInteraction(snap);
+        }
+        
+        // 現在の描画モードのボタンを色付けする
+        $(".map-button").css('color', 'white');
+        $(".map-button[name='" + shape + "']").css('color', 'red');
+      }
+
+      var popup = new ol.Overlay({
+        element: document.getElementById('popup')
+      });
+      map.addOverlay(popup);
+
+      function inputText(feature) {
+        var element = popup.getElement();
+        var coordinate = feature.getGeometry().getCoordinates()[0][3];
+        $(element).popover('destroy');
+        popup.setPosition(coordinate);
+        $(element).popover({
+          placement: 'top',
+          html: true,
+          content: '<div id="_popup"></div>'
+        }).on('shown.bs.popover', function(e){
+          var popover = $(this);
+          $(this).parent().find('#_popup').html('<p><textarea id="txt"></textarea></p><p><input type="button" id="ok" value="ok"/>&nbsp<input type="button" id="cancel" value="cancel"/></p>');
+          $(this).parent().find('#cancel').on('click', function(e){
+            $(element).popover('destroy');
+          });
+          var txt = $(this).parent('div').find('#txt');
+          $(this).parent().find('#ok').on('click', function(e){
+            feature.set('text', txt.val());
+            $(element).popover('destroy');
+          });
+        });
+        $(element).popover('show').on('shown.bs.popover', function(e){
+          var popover = $(this);
+          $(this).parent().find('#cancel').on('click', function(e){
+            $(element).popover('destroy');
+          });
+        });
+      }
+
+      var translate;
+      var modify;
+      var dragbox;
+      function changeMode() {
+        if (select) {
+          // 選択モードから描画モードに切り替え
+          map.removeInteraction(select);
+          select = null;
+          map.removeInteraction(translate);
+          translate = null;
+          map.removeInteraction(modify);
+          modify = null;
+          map.removeInteraction(dragbox);
+          dragbox = null;
+        } else {
+          // 描画モードから選択モードへの切り替え
+          if (draw) {
+            map.removeInteraction(draw);
+            draw = null;
+          }
+          select = new ol.interaction.Select({
+            layers: [vectorLayer],
+            style: selectStyleFunction,
+          });
+          selectedFeatures = select.getFeatures();
+          selectedFeatures.on('change:length', function(){
+            if (selectedFeatures.getLength() > 0) {
+              var strokeWidth = selectedFeatures.item(0).get('strokeWidth');
+              if (strokeWidth) {
+                $("#strokeWidth").val(strokeWidth);
+              }
+              var strokeColor = selectedFeatures.item(0).get('strokeColor');
+              if (strokeColor) {
+                $("#strokeColor").val(strokeColor);
+              }
+            }
+          });
+          map.addInteraction(select);
+          $(".map-button").css('color', 'white');
+          $(".map-button[name='Select']").css('color', 'red');
+
+          dragbox = new ol.interaction.DragBox({
+            condition: ol.events.condition.platformModifierKeyOnly
+          });
+          dragbox.on('boxend', function(){
+            var extent = dragbox.getGeometry().getExtent();
+            vectorSource.forEachFeatureIntersectingExtent(extent, function(feature) {
+              var exists = false;
+              selectedFeatures.forEach(function(e){
+                if (feature.getId() == e.getId()) {
+                  exists = true;
+                }
+              });
+              if (!exists) {
+                selectedFeatures.push(feature);
+              }
+            });
+          });
+          map.addInteraction(dragbox);
+
+          modify = new ol.interaction.Modify({
+            features: selectedFeatures
+          });
+
+          var modifyingFeatures = [];
+          var rectangleInteraction;
+          modify.on('modifystart', function(a){
+            // 変形前の座標を保持
+            modifyingFeatures = a.features;
+            var extent;
+            modifyingFeatures.forEach(function(b){
+              if (b.get('shape') != 'Rectangle' && b.get('shape') != 'Text' && b.get('shape') != 'Image') {
+                // 長方形でない場合、スキップ
+                return;
+              }
+              b.set('coordinates', b.getGeometry().getCoordinates());
+              extent = ol.extent.boundingExtent(b.getGeometry().getCoordinates()[0]);
+            });
+
+            // ドラッグ中のイベントを取得
+            document.addEventListener('pointermove', modifying);
+            
+            rectangleInteraction = new ol.interaction.Extent({
+              boxStyle: selectStyleFunction 
+            });
+            rectangleInteraction.setActive(false);
+            if (extent) {
+              rectangleInteraction.setExtent(extent); 
+            }
+            map.addInteraction(rectangleInteraction);
+          });
+
+          modify.on('modifyend', function(a){
+            // 変形終了時にドラッグイベントリスナーを削除
+            document.removeEventListener('pointermove', modifying);
+            modifyingFeatures.forEach(function(b){
+              if (!b.get('coordinates')) {
+                return;
+              }
+              // rectangleInteractionと同じ長方形を変形された図形に適用する
+              var extent = rectangleInteraction.getExtent();
+              var polygon = new ol.Feature(ol.geom.Polygon.fromExtent(extent));
+              b.getGeometry().setCoordinates(polygon.getGeometry().getCoordinates());
+              b.unset('coordinates');
+
+              if (b.get('shape') != 'Image') {
+                return;
+              }
+              refreshImage(b);
+            });
+            modifyingFeatures = [];
+            map.removeInteraction(rectangleInteraction);
+            rectangleInteraction = null;
+          });
+
+          var modifying = function(c){
+            modifyingFeatures.forEach(function(d){
+              var oldCoordinates = d.get('coordinates');
+              if (!oldCoordinates) {
+                return;
+              }
+              var newCoordinates = d.getGeometry().getCoordinates();
+              // 新たな長方形を導出する
+              var newExtent = getRectangleExtent(oldCoordinates, newCoordinates)
+
+              rectangleInteraction.setExtent(newExtent);
+            });
+          };
+
+          map.addInteraction(modify);
+
+          // 図形移動のためのinteraction
+          translate = new ol.interaction.Translate({
+            features: selectedFeatures
+          });
+
+          // 図形移動後の処理
+          translate.on('translateend', function(a){
+            a.features.forEach(function(b){
+              if (b.get('shape') != 'Image') {
+                return;
+              }
+              refreshImage(b);
+            });
+          });
+          map.addInteraction(translate);
+        }
+      }
+
+      function getRectangleExtent(oldCoordinates, newCoordinates) {
+        var result;
+        if (oldCoordinates[0].length == newCoordinates[0].length) {
+          // 頂点の数が同じ場合
+          // 変更された頂点を取得
+          var diffVertex = -1;
+          for (var i = 0; i < oldCoordinates[0].length; i++) {
+            if (oldCoordinates[0][i][0] != newCoordinates[0][i][0] ||
+                oldCoordinates[0][i][1] != newCoordinates[0][i][1]) {
+              diffVertex = i;
+            }
+          }
+          // 座標が変更された点とその対角線の頂点を取得する
+          var oppositeVertex = diffVertex > 1 ? diffVertex - 2 : diffVertex + 2;
+          var minX = Math.min(newCoordinates[0][diffVertex][0], newCoordinates[0][oppositeVertex][0]);
+          var minY = Math.min(newCoordinates[0][diffVertex][1], newCoordinates[0][oppositeVertex][1]);
+          var maxX = Math.max(newCoordinates[0][diffVertex][0], newCoordinates[0][oppositeVertex][0]);
+          var maxY = Math.max(newCoordinates[0][diffVertex][1], newCoordinates[0][oppositeVertex][1]);
+          result = [minX, minY, maxX, maxY];
+        } else {
+          // 頂点の数が異なる場合
+          // 新たに作成された点を起点にして新たな長方形
+          var newVertex;
+          newCo:for (var i = 0; i < newCoordinates[0].length; i++) {
+            for (var j = 0; j < oldCoordinates[0].length; j++) {
+              if (newCoordinates[0][i][0] == oldCoordinates[0][j][0]) {
+                if (newCoordinates[0][i][1] == oldCoordinates[0][j][1]) {
+                  continue newCo;
+                }
+              }
+            }
+            // ここまで到達すれば新頂点であることが確定する
+            newVertex = i
+            break;
+          }
+          if (!newVertex) {
+            result = ol.extent.boundingExtent(oldCoordinates[0]);
+            return result;
+          }
+          var oppositeVertex1 = i - 2 > 0 ? i - 2 : i + 3;
+          var oppositeVertex2 = i - 3 > 0 ? i - 3 : i + 2;
+          result = ol.extent.boundingExtent([
+            newCoordinates[0][newVertex],
+            newCoordinates[0][oppositeVertex1],
+            newCoordinates[0][oppositeVertex2]
+          ]);
+
+        }
+        return result;
+      }
+
+      function refreshImage(imageFeature) {
+        // 画像の場合、図形と紐づく画像レイヤーを取得する
+        var imgLayer = map.getLayers().getArray().filter(function(c){
+          return c.get('featureId') == imageFeature.getId();
+        })[0];
+        // 画像を一旦削除する
+        if (imgLayer) {
+          map.removeLayer(imgLayer);
+        }
+        
+
+        // 矩形の座標を取得する
+        var extent = ol.extent.boundingExtent(imageFeature.getGeometry().getCoordinates()[0]);
+        var newImageLayer = new ol.layer.Image({
+          source: new ol.source.ImageStatic({
+            url: 'https://sun-san-tech.com/wp-content/uploads/2019/12/wave.jpg',
+            projection: new ol.proj.Projection({
+              code: 'xkcd-image',
+              units: 'pixels',
+              extent: extent
+            }),
+            imageExtent: extent
+          })
+        });
+        // 画像レイヤーに対して図形と同じIDを設定する
+        newImageLayer.set('featureId', imageFeature.getId());
+        map.addLayer(newImageLayer);
+      }
+      $(".feature-style").on('change', function(){
+        if (select) {
+          var key = $(this).attr('id');
+          var val = $(this).val();
+          selectedFeatures.forEach(function(feature){
+            feature.set(key, val);
+          });
+        }
+      });
+    </script>
+  
+</div>
