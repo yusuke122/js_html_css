@@ -1,0 +1,19 @@
+https://stackoverflow.com/questions/63189391/openlayers-ol-ext-add-fill-color-to-donut-chart
+
+            style = [
+              new ol.style.Style({
+                image: new ol.style.Chart({
+                  type: 'donut',
+                  ...
+                  ...
+                })
+              }),
+              new ol.style.Style({
+                image: new ol.style.Circle({
+                  radius: ???,
+                  fill: new ol.style.Fill({
+                    color: ???
+                  })
+                })
+              })
+            ];
