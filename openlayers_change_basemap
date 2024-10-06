@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>htmlMap</title>
+<meta http-equiv='content-type' charset='utf-8'>
+<meta name='viewport' content='width=device-width'>
+</head>
+<body>
+<!-- 埋め込みマップのdivタグ。マップサイズはwidth（幅）とheight（高さ）で決まる -->
+<div id='mapcontainer' style='width:100%; height:300px; z-index:0;'></div>
+<!-- プルダウンメニュー -->
+<select id="TileSelect" name="Tile_Select" onChange="TileSet()">
+  <option value="0" selected>OpenStreetMap</option>
+  <option value="1">Humanitarian map style</option>
+  <option value="2">OpenTopoMap</option>
+</select>
+
+<!-- 以下OpenLayersのJavaScriptとCSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.9.0/css/ol.css" type="text/css">
+<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.9.0/build/ol.js"></script>
+
+<script>
+
+//グローバル変数
+var MapTile = [
+  OSMtile = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      attributions: "© <a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap</a> contributors",
+      url: "http://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    })
+  }),
+  HOTtile = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      attributions: "© <a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap</a> contributors, Tiles: © <a href='http://map.hotosm.org/' target='_blank'>HOT</a>",
+      url: "http://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+    })
+  }),
+  OTMtile = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      attributions: "© <a href='<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap</a> contributors, <a href='http://viewfinderpanoramas.org/' target='_blank'>SRTM</a> | map style: © <a href='https://opentopomap.org/' target='_blank'>OpenTopoMap</a>",
+      url: "http://a.tile.opentopomap.org/{z}/{x}/{y}.png"
+    })
+  })
+];
+var currentTile = 0;
+var map;
+
+function init_map() {
+  map = new ol.Map({
+    target: 'mapcontainer',
+    layers: [MapTile[currentTile]],
+    view: new ol.View({
+      center: ol.proj.fromLonLat([142.14, 43.65]),  //初期の中心位置 [経度, 緯度]
+      zoom: 6 //ズームレベル
+    })
+  });
+}
+
+function TileSet() {
+  map.removeLayer(MapTile[currentTile]);
+  currentTile = document.getElementById("TileSelect").value;
+  map.addLayer(MapTile[currentTile]);
+}
+
+//ダウンロード時に初期化する
+window.addEventListener('DOMContentLoaded', init_map());
+
+</script>
+</body>
+</html>
