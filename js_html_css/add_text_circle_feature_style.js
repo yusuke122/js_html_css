@@ -2,7 +2,15 @@ import Feature from 'ol/Feature.js';
 import Map from 'ol/Map.js';
 import Point from 'ol/geom/Point.js';
 import View from 'ol/View.js';
-import {Circle, Fill, Icon, Stroke, Style, Text} from 'ol/style.js';
+import {
+  Circle,
+  Fill,
+  Icon,
+  Stroke,
+  Style,
+  Text,
+  RegularShape,
+} from 'ol/style.js';
 import {OGCMapTile, Vector as VectorSource} from 'ol/source.js';
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer.js';
 
@@ -17,9 +25,9 @@ const iconStyle = new Style({
   }),
   text: new Text({
     text: '無線装置ID\n7870',
-    font: 'bold 0.8rem Calibri,sans-serif',
+    font: 'bold 0.7rem Calibri,sans-serif',
     fill: new Fill({
-      color: 'red',
+      color: 'black',
     }),
     stroke: new Stroke({
       color: 'white',
@@ -29,19 +37,21 @@ const iconStyle = new Style({
 });
 
 const duplicateStyle = new Style({
-  image: new Circle({
-    radius: 7,
+  image: new RegularShape({
     fill: new Fill({
       color: 'black',
     }),
     stroke: new Stroke({
       color: 'white',
-      width: 2,
+      width: 1,
     }),
+    points: 4,
+    radius: 10,
+    angle: Math.PI / 4,
   }),
   text: new Text({
-    text: '6',
-    font: 'bold 0.8rem Calibri,sans-serif',
+    text: '9+',
+    font: '0.8rem Calibri,sans-serif',
     fill: new Fill({
       color: 'white',
     }),
@@ -52,7 +62,22 @@ const duplicateStyle = new Style({
   }),
 });
 
-iconFeature.setStyle([duplicateStyle, iconStyle]);
+const iconOutlineStyle = new Style({
+  image: new RegularShape({
+    fill: new Fill({
+      color: 'black',
+    }),
+    stroke: new Stroke({
+      color: 'white',
+      width: 1,
+    }),
+    points: 4,
+    radius: 10,
+    scale: [2.5, 1.5],
+  }),
+});
+
+iconFeature.setStyle([iconOutlineStyle, duplicateStyle, iconStyle]);
 
 const vectorSource = new VectorSource({
   features: [iconFeature],
@@ -185,3 +210,4 @@ map.on('pointermove', function (e) {
   const hit = map.hasFeatureAtPixel(e.pixel);
   map.getTargetElement().style.cursor = hit ? 'pointer' : '';
 });
+
