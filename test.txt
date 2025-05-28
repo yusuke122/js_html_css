@@ -1,19 +1,252 @@
-map.on('click', function (evt) {
-  const coordinate = evt.coordinate; // [経度, 緯度] 形式
+---
+title: openlayersで遊んでみた
+tags: Openlayers
+author: yttmyouyou
+slide: false
+---
 
-  map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-    const radioTable = feature.get('radio_table');
-    const mesh = feature.get('mesh');
 
-    // 親にデータを送る
-    onFeatureClick({
-      coordinate,
-      radioTable,
-      mesh,
-      layerName: layer?.get('name') ?? 'unknown'
-    });
+vueとopenlayersでどんなことができるか調査しました
 
-    // 必要があればループを止める
-    return true; // 最初のマッチだけ処理する場合
-  });
-});
+<html>
+<template>
+  <div id="map" ref="mapContainer" class="map"></div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import 'ol/ol.css'
+import { Map, View } from 'ol'
+import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer'
+import { OSM } from 'ol/source'
+import { Vector as VectorSource } from 'ol/source'
+import { Point, Polygon, Circle as CircleGeom } from 'ol/geom'
+import { Feature } from 'ol'
+import { fromLonLat } from 'ol/proj'
+import { getDistance } from 'ol/sphere'
+import * as japanmesh from 'japanmesh'
+import {
+  Style,
+  Fill,
+  Stroke,
+  Circle as CircleStyle,
+  Text,
+} from 'ol/style'
+
+const mapContainer = ref(null)
+
+// 各レイヤーのソース
+const pointSource = new VectorSource()
+const circleSource = new VectorSource()
+const polygonSource = new VectorSource()
+
+// レイヤー
+const pointLayer = new VectorLayer({ source: pointSource })
+const circleLayer = new VectorLayer({ source: circleSource })
+const polygonLayer = new VectorLayer({ source: polygonSource })
+
+// API
+const pointApi = '/api/points'
+const circleApi = '/api/circles'
+const polygonApi = '/api/polygons'
+
+onMounted(() => {
+  const map = new Map({
+    target: mapContainer.value,
+    layers: [
+      new TileLayer({ source: new OSM() }),
+      polygonLayer,
+      circleLayer,
+      pointLayer,
+    ],
+    view: new View({
+      center: fromLonLat([139.6917, 35.6895]),
+      zoom: 5,
+    }),
+  })
+
+  updateAll()
+})
+
+async function updateAll() {
+  await Promise.all([
+    updatePoints(),
+    updateCircles(),
+    updatePolygons(),
+  ])
+}
+
+// ポイント描画（5mクラスタ + 件数 + groupId）
+async function updatePoints() {
+  pointSource.clear()
+  const res = await fetch(pointApi)
+  const rawPoints = await res.json() // [{ lon, lat, groupId }]
+
+  const clusters = []
+
+  rawPoints.forEach(p => {
+    const target = [p.lon, p.lat]
+    let cluster = null
+    for (const c of clusters) {
+      if (getDistance([c.lon, c.lat], target) <= 5 && c.groupId === p.groupId) {
+        c.count++
+        return
+      }
+    }
+    clusters.push({ lon: p.lon, lat: p.lat, count: 1, groupId: p.groupId })
+  })
+
+  clusters.forEach(c => {
+    const feature = new Feature({
+      geometry: new Point(fromLonLat([c.lon, c.lat])),
+    })
+
+    feature.setProperties({
+      groupId: c.groupId,
+      visible: true,
+    })
+
+    feature.setStyle(() => {
+      return feature.get('visible')
+        ? new Style({
+            image: new CircleStyle({
+              radius: 8,
+              fill: new Fill({ color: 'red' }),
+              stroke: new Stroke({ color: 'white', width: 1 }),
+            }),
+            text: new Text({
+              text: String(c.count),
+              fill: new Fill({ color: '#fff' }),
+              stroke: new Stroke({ color: '#000', width: 3 }),
+              offsetY: -15,
+              font: 'bold 12px sans-serif',
+            }),
+          })
+        : null
+    })
+
+    pointSource.addFeature(feature)
+  })
+}
+
+// サークル描画（500mクラスタ + 件数 + groupId）
+async function updateCircles() {
+  circleSource.clear()
+  const res = await fetch(circleApi)
+  const rawCircles = await res.json() // [{ lon, lat, radius, groupId }]
+
+  const clusters = []
+
+  rawCircles.forEach(c => {
+    const center = [c.lon, c.lat]
+    for (const g of clusters) {
+      if (
+        getDistance([g.lon, g.lat], center) <= 500 &&
+        g.groupId === c.groupId
+      ) {
+        g.count++
+        return
+      }
+    }
+    clusters.push({
+      lon: c.lon,
+      lat: c.lat,
+      radius: c.radius,
+      groupId: c.groupId,
+      count: 1,
+    })
+  })
+
+  clusters.forEach(c => {
+    const feature = new Feature({
+      geometry: new CircleGeom(fromLonLat([c.lon, c.lat]), c.radius),
+    })
+
+    feature.setProperties({
+      groupId: c.groupId,
+      visible: true,
+    })
+
+    feature.setStyle(() => {
+      return feature.get('visible')
+        ? new Style({
+            stroke: new Stroke({ color: 'green', width: 2 }),
+            fill: new Fill({ color: 'rgba(0, 255, 0, 0.1)' }),
+            text: new Text({
+              text: String(c.count),
+              fill: new Fill({ color: '#fff' }),
+              stroke: new Stroke({ color: '#000', width: 3 }),
+              offsetY: -15,
+              font: 'bold 12px sans-serif',
+            }),
+          })
+        : null
+    })
+
+    circleSource.addFeature(feature)
+  })
+}
+
+// ポリゴン描画（groupId付き）
+async function updatePolygons() {
+  polygonSource.clear()
+  const res = await fetch(polygonApi)
+  const meshes = await res.json() // [{ meshCode, groupId }]
+
+  meshes.forEach(m => {
+    const bbox = japanmesh.toBBox(m.meshCode)
+    const [minLon, minLat, maxLon, maxLat] = bbox
+    const coords = [
+      [
+        fromLonLat([minLon, minLat]),
+        fromLonLat([minLon, maxLat]),
+        fromLonLat([maxLon, maxLat]),
+        fromLonLat([maxLon, minLat]),
+        fromLonLat([minLon, minLat]),
+      ],
+    ]
+
+    const feature = new Feature({
+      geometry: new Polygon(coords),
+    })
+
+    feature.setProperties({
+      groupId: m.groupId,
+      visible: true,
+    })
+
+    feature.setStyle(() => {
+      return feature.get('visible')
+        ? new Style({
+            stroke: new Stroke({ color: 'blue', width: 2 }),
+            fill: new Fill({ color: 'rgba(0, 0, 255, 0.1)' }),
+          })
+        : null
+    })
+
+    polygonSource.addFeature(feature)
+  })
+}
+
+// 外部から呼び出すフィルタ関数
+function filterByGroupId(targetGroupId) {
+  const allSources = [pointSource, circleSource, polygonSource]
+  allSources.forEach(source => {
+    source.getFeatures().forEach(f => {
+      const match = f.get('groupId') === targetGroupId
+      f.set('visible', match)
+      f.changed() // スタイル再評価
+    })
+  })
+}
+
+// 例: 外部セレクトボックスから使用可能
+// filterByGroupId("groupA")
+</script>
+
+<style scoped>
+.map {
+  width: 100%;
+  height: 600px;
+}
+</style>
