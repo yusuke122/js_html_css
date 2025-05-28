@@ -1,0 +1,19 @@
+map.on('click', function (evt) {
+  const coordinate = evt.coordinate; // [経度, 緯度] 形式
+
+  map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
+    const radioTable = feature.get('radio_table');
+    const mesh = feature.get('mesh');
+
+    // 親にデータを送る
+    onFeatureClick({
+      coordinate,
+      radioTable,
+      mesh,
+      layerName: layer?.get('name') ?? 'unknown'
+    });
+
+    // 必要があればループを止める
+    return true; // 最初のマッチだけ処理する場合
+  });
+});
