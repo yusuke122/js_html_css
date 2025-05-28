@@ -1,0 +1,80 @@
+<template>
+  <div class="table-section">
+    <!-- mode2 の場合だけ overflow-x -->
+    <div v-if="isMode2" class="scroll-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th v-for="i in 20" :key="i">Data {{ i }}</th>
+            <th>End</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, rowIndex) in currentTable" :key="rowIndex">
+            <td>Row {{ rowIndex + 1 }}</td>
+            <td v-for="i in 20" :key="i">{{ row[`col${i}`] }}</td>
+            <td>{{ row.end }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- mode1 のとき：1 + 10 列 -->
+    <table v-else-if="isMode1">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th v-for="i in 10" :key="i">Data {{ i }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(row, rowIndex) in currentTable" :key="rowIndex">
+          <td>Row {{ rowIndex + 1 }}</td>
+          <td v-for="i in 10" :key="i">{{ row[`col${i}`] }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- mode3 のとき：1列だけ -->
+    <table v-else>
+      <thead>
+        <tr><th>Data</th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="(row, index) in currentTable" :key="index">
+          <td>{{ row.value }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const currentMode = ref(0) // 0:mode1, 1:mode2, 2:mode3
+
+const currentTable = ref([]) // データ（例として一括取得後該当modeを抽出）
+
+const isMode1 = computed(() => currentMode.value === 0)
+const isMode2 = computed(() => currentMode.value === 1)
+const isMode3 = computed(() => currentMode.value === 2)
+</script>
+
+<style scoped>
+.scroll-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 600px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+}
+</style>
