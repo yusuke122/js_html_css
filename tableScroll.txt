@@ -1,0 +1,136 @@
+了解です。\*\*「テーブル全体ではなく、真ん中の20列だけに `overflow-x` をかけたい」\*\*ということですね。
+
+これはちょっと工夫が必要ですが、以下のように**真ん中の20列だけをラップする構造**を作り、そこに `overflow-x` を適用することで実現可能です。
+
+---
+
+## ✅ 実現方法：構造を分けてラップする
+
+### HTML構造のイメージ（Vueテンプレート）
+
+```html
+<table>
+  <thead>
+    <tr>
+      <th>Label</th>
+
+      <!-- ✅ 真ん中のデータ列だけスクロール可能 -->
+      <th colspan="20" class="scroll-wrapper-header">
+        <div class="scroll-inner">
+          <table>
+            <thead>
+              <tr>
+                <th v-for="i in 20" :key="'h'+i">Data {{ i }}</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </th>
+
+      <th>End</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr v-for="(row, rowIndex) in currentTable" :key="rowIndex">
+      <td>Row {{ rowIndex + 1 }}</td>
+
+      <!-- ✅ 真ん中だけスクロール -->
+      <td colspan="20" class="scroll-wrapper-body">
+        <div class="scroll-inner">
+          <table>
+            <tbody>
+              <tr>
+                <td v-for="i in 20" :key="'b'+i">{{ row[`col${i}`] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </td>
+
+      <td>{{ row.end }}</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+---
+
+## ✅ CSS（クラスによる `overflow-x` 適用）
+
+```css
+.scroll-wrapper-header,
+.scroll-wrapper-body {
+  padding: 0;
+  margin: 0;
+}
+
+.scroll-inner {
+  overflow-x: auto;
+  max-width: 500px; /* 必要に応じて調整 */
+}
+
+.scroll-inner table {
+  border-collapse: collapse;
+  width: max-content;
+}
+
+.scroll-inner th,
+.scroll-inner td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+```
+
+---
+
+## ✅ 結果イメージ
+
+| 左固定列    | ← スクロール領域（20列） →          | 右固定列  |
+| ------- | ------------------------- | ----- |
+| `Label` | `col1` `col2` ... `col20` | `End` |
+| 固定      | ⬅️スクロール可能➡️               | 固定    |
+
+---
+
+## ✅ 注意点
+
+* `<td colspan="20">` に `<div>` を入れても正しく表示されます（最新ブラウザではOK）
+* `scroll-inner` には `max-width` か `width: 100%` などで**横幅制限を必ず指定**
+* 表ヘッダーとボディが「スクロール同期」しません（完全同期が必要な場合は別対応）
+
+---
+
+## ✅ 別案：JSによる自動クラス付与も可能
+
+もし \*\*Vue側で「20列以上のときだけ動的にクラスをつけたい」\*\*という場合は：
+
+```vue
+<td
+  colspan="20"
+  :class="{ 'scroll-wrapper-body': middleColumnCount > 10 }"
+>
+  ...
+</td>
+```
+
+```ts
+const middleColumnCount = 20 // ← modeに応じて切り替えるようにする
+```
+
+---
+
+## ✅ まとめ
+
+| ポイント            | 方法                                    |
+| --------------- | ------------------------------------- |
+| 中央の列だけスクロール     | `<div class="scroll-inner">`でラップ      |
+| テーブル分割          | `<td colspan="20">` に内テーブルを入れる        |
+| スクロール条件に応じて制御   | `:class`で動的クラス切り替え                    |
+| CSSでoverflowを制御 | `.scroll-inner { overflow-x: auto; }` |
+
+---
+
+もし「横スクロールにあわせてヘッダーも連動したい」といった細かいUXの要望が出てきたら、それ用のレイアウト提案もできますので、遠慮なくどうぞ！
