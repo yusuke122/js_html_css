@@ -1,0 +1,102 @@
+<template>
+  <div class="tabs">
+    <button
+      v-for="(label, index) in typeLabels"
+      :key="index"
+      :class="{ active: currentTab === index }"
+      @click="currentTab = index"
+    >
+      {{ label }}
+    </button>
+  </div>
+
+  <div class="table-section">
+    <table v-if="currentTableData.length > 0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in currentTableData" :key="item.id">
+          <td>{{ item.id }}</td>
+          <td>{{ item.value }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p v-else>データがありません</p>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+
+// タブラベル
+const typeLabels = ['Type1', 'Type2', 'Type3', 'Type4', 'Type5', 'Type6']
+
+// APIデータ保持（type1〜type6）
+const tableDataByType = ref({
+  type1: [],
+  type2: [],
+  type3: [],
+  type4: [],
+  type5: [],
+  type6: []
+})
+
+// 現在のタブインデックス
+const currentTab = ref(0)
+
+// 該当データのみ抽出（computed）
+const currentTableData = computed(() => {
+  const typeKey = `type${currentTab.value + 1}`
+  return tableDataByType.value[typeKey] || []
+})
+
+// データ取得＆整形（toFixed(4)）
+onMounted(async () => {
+  const response = await fetch('/api/data')
+  const json = await response.json()
+  const raw = json.data
+
+  for (let i = 1; i <= 6; i++) {
+    const key = `type${i}`
+    const rawItems = raw[key] || []
+    tableDataByType.value[key] = rawItems.map((item, index) => ({
+      id: item.id ?? index + 1,
+      value: parseFloat(item.value).toFixed(4)
+    }))
+  }
+})
+</script>
+
+<style scoped>
+.tabs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.tabs button {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.tabs .active {
+  background-color: #007acc;
+  color: white;
+}
+.table-section {
+  display: flex;
+  justify-content: center;
+}
+table {
+  border-collapse: collapse;
+  width: 300px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+</style>
