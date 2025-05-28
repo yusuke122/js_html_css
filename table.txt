@@ -1,0 +1,149 @@
+<template>
+  <div class="container">
+    <!-- テーブルA -->
+    <div class="table-section">
+      <div class="filter-group">
+        <input v-model.number="filterAGreaterThan" type="number" placeholder="A: hide > this">
+        <input v-model.number="filterALessThan" type="number" placeholder="A: hide < this">
+      </div>
+      <table ref="tableARef" class="sortable">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in filteredDataA" :key="item.id">
+            <td><input type="checkbox" v-model="item.checked" /></td>
+            <td>{{ item.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ボタン -->
+    <div class="button-section">
+      <button @click="moveToB">→</button>
+      <button @click="moveToA">←</button>
+    </div>
+
+    <!-- テーブルB -->
+    <div class="table-section">
+      <div class="filter-group">
+        <input v-model.number="filterCGreaterThan" type="number" placeholder="B: hide > this">
+        <input v-model.number="filterCLessThan" type="number" placeholder="B: hide < this">
+      </div>
+      <table ref="tableBRef" class="sortable">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in filteredDataB" :key="item.id">
+            <td><input type="checkbox" v-model="item.checked" /></td>
+            <td>{{ item.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import Tablesort from 'tablesort'
+
+// 初期データ
+const tableAData = ref([
+  { id: 1, value: 10, checked: false },
+  { id: 2, value: 30, checked: false },
+  { id: 3, value: 50, checked: false }
+])
+const tableBData = ref([
+  { id: 4, value: 20, checked: false },
+  { id: 5, value: 40, checked: false },
+  { id: 6, value: 60, checked: false }
+])
+
+// フィルターAセット
+const filterAGreaterThan = ref(Infinity) // 除外：value > この値
+const filterALessThan = ref(-Infinity)   // 除外：value < この値
+
+// フィルターBセット
+const filterCGreaterThan = ref(Infinity)
+const filterCLessThan = ref(-Infinity)
+
+// Aテーブルフィルター
+const filteredDataA = computed(() =>
+  tableAData.value.filter(item =>
+    item.value <= filterAGreaterThan.value &&
+    item.value >= filterALessThan.value
+  )
+)
+
+// Bテーブルフィルター
+const filteredDataB = computed(() =>
+  tableBData.value.filter(item =>
+    item.value <= filterCGreaterThan.value &&
+    item.value >= filterCLessThan.value
+  )
+)
+
+// 移動処理
+const moveToB = () => {
+  const selected = tableAData.value.filter(item => item.checked)
+  tableAData.value = tableAData.value.filter(item => !item.checked)
+  tableBData.value.push(...selected.map(item => ({ ...item, checked: false })))
+}
+const moveToA = () => {
+  const selected = tableBData.value.filter(item => item.checked)
+  tableBData.value = tableBData.value.filter(item => !item.checked)
+  tableAData.value.push(...selected.map(item => ({ ...item, checked: false })))
+}
+
+// tablesort初期化
+const tableARef = ref(null)
+const tableBRef = ref(null)
+onMounted(() => {
+  new Tablesort(tableARef.value)
+  new Tablesort(tableBRef.value)
+})
+</script>
+
+<style scoped>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 50px;
+}
+.table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.button-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+table {
+  border-collapse: collapse;
+  width: 200px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+</style>
