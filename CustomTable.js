@@ -1,4 +1,10 @@
-
+<template>
+  <table ref="sortTable">
+    <thead>
+      <tr>
+        <th data-sort-method="custom-int">順位</th>
+        <th data-sort-method="custom-float">スコア</th>
+      </tr>
     </thead>
     <tbody>
       <tr v-for="row in rows" :key="row.rank">
