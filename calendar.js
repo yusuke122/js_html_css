@@ -1,46 +1,62 @@
 <template>
-  <div>
-    <VCalendar
-      :attributes="calendarAttributes"
-      @dayclick="onDaySelect"
-    />
-  </div>
+  <v-calendar
+    v-model="selectedData"
+    :attributes="calendarAttributes"
+  />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import 'v-calendar/style.css'
 
-const selectedDate = ref(null)
+const selectedData = ref(new Date())
 
-function onDaySelect(day) {
-  selectedDate.value = day.date
+// ✅ APIから受け取った日付とスコアの例（ISO形式で指定）
+const scoreData = [
+  { date: '2025-06-20', score: 90 },
+  { date: '2025-06-21', score: 60 },
+  { date: '2025-06-22', score: 30 },
+]
+
+// 🔁 色分類ロジック：スコアに応じて色を返す
+function getColor(score) {
+  if (score >= 80) return 'red'
+  if (score >= 50) return 'blue'
+  return 'gold'
 }
 
-// VCalendar の attributes 配列を動的に生成
+// 📆 表示用の attributes を計算
 const calendarAttributes = computed(() => {
-  if (!selectedDate.value) return []
-  return [
-    {
-      key: 'selected',
-      dates: selectedDate.value,
-      customData: { isSelected: true },
-      popover: { label: '選択中' },
-      contentClass: 'selected-day'  // ここで CSS クラスを指定
-    }
-  ]
+  const colorDots = scoreData.map(item => ({
+    key: `dot-${item.date}`,
+    dates: new Date(item.date),
+    dot: {
+      color: getColor(item.score),
+      backgroundColor: getColor(item.score),
+    },
+    order: 1,
+  }))
+
+  const selectedRing = {
+    key: 'selected-ring',
+    dates: selectedData.value,
+    customData: { selected: true },
+    contentClass: 'selected-outline',
+    order: 0,
+  }
+
+  return [...colorDots, selectedRing]
 })
 </script>
 
 <style scoped>
-.selected-day {
-  border: 2px solid gray;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 🟠 色付き丸のスタイルはv-calendarが自動生成 */
+
+/* 🔘 選択された日付の外枠 (グレーのリング) */
+.selected-outline .vc-day-content {
+  border: 4px solid #ccc;
+  border-radius: 1rem;
+  background-color: transparent !important;
+  box-sizing: border-box;
+  padding: 2px;
 }
 </style>
