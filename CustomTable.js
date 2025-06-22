@@ -44,6 +44,18 @@ export default {
       const parseValue = val => val.trim() === '---' ? Infinity : parseFloat(val);
       return parseValue(a) - parseValue(b);
     });
+    // Tablesort.extend('custom-float', function(item) {
+    //   return /^-?\d+\.\d{4}$/.test(item.trim()) || item.trim() === '---';
+    // }, function(a, b) {
+    //   const isMissing = val => val.trim() === '---';
+    
+    //   if (isMissing(a) && isMissing(b)) return 0;
+    //   if (isMissing(a)) return 1; // 'a' は欠損 → 'b' より下に
+    //   if (isMissing(b)) return -1; // 'b' は欠損 → 'a' より上に
+    
+    //   return parseFloat(a) - parseFloat(b);
+    // });
+
 
     // 初期化
     this.$nextTick(() => {
