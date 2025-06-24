@@ -1,0 +1,80 @@
+結論から言うと、はい、このコードで `"---"` を常にソート結果の最下位に配置することは実現可能です。ただし、いくつかの前提条件と挙動に関する注意点があります。佑輔さんのような構造を丁寧に読み解く力を持っている方に向けて、各段階で具体的に解説していきますね。
+
+---
+
+✅ 1. `Tablesort.extend` の挙動と返り値
+
+Tablesort.extend(typeName, detectFunc, compareFunc)
+
+📌 `typeName`
+
+任意の型名（例: `'number-with-placeholder'`）
+→ tablesort 側が内部的にこの型を使って対象列のソート方法を決定します。
+
+📌 `detectFunc(item)`
+
+列内の1つのセル `item` に対して呼び出され、「この型で処理すべきか？」を `true/false` で判定する関数です。
+
+つまり返り値は `true` または `false`。
+
+この関数が列内のすべてのセルで `true` を返した場合、その列は `'number-with-placeholder'` 型として扱われ、この型に登録された `compareFunc` が適用されます。
+
+---
+
+✅ 2. ソートアルゴリズムの流れ（`compareFunc(a, b)`）
+
+const parse = val => val.trim() === '---' ? NaN : parseFloat(val);
+
+• `"---"` は明示的に `NaN` に変換されます
+• 他の値（例: `"23.1"`, `"0.005"`, `"-42"`）は `parseFloat` により数値に変換される
+
+
+比較ロジックは以下の通り：
+
+if (isNaN(aVal) && isNaN(bVal)) return 0;     // 両方 "---" → 並び順維持
+if (isNaN(aVal)) return 1;                     // aが"---"なら後ろに
+if (isNaN(bVal)) return -1;                    // bが"---"なら後ろに
+return aVal - bVal;                            // 通常の数値比較（昇順）
+
+---
+
+✅ このロジックで `"---"` は常に末尾に来る？
+
+はい、昇順のときは必ず `"---"` が他の全ての数値よりも後ろに配置されます。
+
+ただし注意点として：
+
+• `"abc"` や `""` のような値は `detectFunc` で `false` と判定され、この比較関数の適用外になります（その列が混在していれば意図通りに動作しない可能性あり）
+
+
+---
+
+🔧 提案：より確実に `"---"` のみを最下位に扱う方法
+
+`detectFunc` を少し緩めて `"---"` が含まれる列を必ず対象にするようにできます：
+
+Tablesort.extend('number-with-placeholder', function(item) {
+  return /^-?\d+(\.\d+)?$/.test(item.trim()) || item.trim() === '---';
+}, function(a, b) {
+  const isPlaceholder = val => val.trim() === '---';
+  if (isPlaceholder(a) && isPlaceholder(b)) return 0;
+  if (isPlaceholder(a)) return 1;
+  if (isPlaceholder(b)) return -1;
+  return parseFloat(a) - parseFloat(b);
+});
+
+---
+
+🧪 テスト観点
+
+値A	値B	結果（昇順）	解説	
+"---"	"10.5"	1	"---" は後ろ	
+"23"	"---"	-1	"23" は "---" より前	
+"---"	"---"	0	順位維持	
+
+
+---
+
+もしこの列に `"---"` 以外の文字列が入りうる場合は、さらに判定を強化することもできます。佑輔さんのテーブル構成によって、Vue 側で整形して `"---"` 以外の例外値を弾く方法もアリですね。
+
+もっと堅牢にしたい場合や降順時も `"---"` を常に末尾に送りたいなど、仕様を拡張することも可能ですよ。次にやりたい方向性があれば一緒に詰めていきましょう。
